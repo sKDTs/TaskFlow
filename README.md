@@ -17,7 +17,7 @@ A **TaskFlow API** é uma Web API RESTful desenvolvida com .NET, Entity Framewor
 ## 🚀 Como Executar o Projeto
 1. Clonar o repositório
    ```bash
-   git clone <URL_DO_REPOSITORIO>
+   git clone https://github.com/sKDTs/TaskFlow.git
    cd TaskFlow/TaskFlow.API
    ```
 2. Configurar a Connection String em `appsettings.json`
