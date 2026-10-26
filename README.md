@@ -20,7 +20,7 @@ A **TaskFlow API** é uma Web API RESTful desenvolvida com .NET, Entity Framewor
    git clone <URL_DO_REPOSITORIO>
    cd TaskFlow/TaskFlow.API
    ```
-2. Configurar a Connection String em `TaskFlow.API/appsettings.json`
+2. Configurar a Connection String em `appsettings.json`
    - Windows (autenticação integrada):
      `Server=localhost;Database=TaskFlowDb;Trusted_Connection=True;TrustServerCertificate=True;`
    - SQL Server com usuário/senha (ex.: Docker):
@@ -43,17 +43,20 @@ docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=SuaSenha@123" -p 1433:1433 -
 
 ## 🏗 Arquitetura
 ```
-TaskFlow.API/
- ├── Controllers/     -> Rotas HTTP e Status Codes
- ├── Services/        -> Regras de negócio e validações
- ├── Repositories/    -> Acesso a dados (EF Core)
- ├── Models/
- │   ├── Entities/    -> Tarefa, Categoria
- │   ├── DTOs/        -> Objetos de entrada/saída
- │   └── Enums/       -> StatusTarefa
- ├── Exceptions/      -> NotFoundException, BusinessException
- ├── Middlewares/     -> ExceptionHandlingMiddleware
- └── Data/            -> AppDbContext e Migrations
+TaskFlow/
+ ├── Database/            -> script.sql (criação do banco)
+ └── TaskFlow.API/
+     ├── Controllers/     -> Rotas HTTP e Status Codes
+     ├── Services/        -> Regras de negócio e validações
+     ├── Repositories/    -> Acesso a dados (EF Core)
+     ├── Models/
+     │   ├── Entities/    -> Tarefa, Categoria
+     │   ├── DTOs/        -> Objetos de entrada/saída
+     │   └── Enums/       -> StatusTarefa
+     ├── Exceptions/      -> NotFoundException, BusinessException
+     ├── Middlewares/     -> ExceptionHandlingMiddleware
+     ├── Migrations/      -> Migrations do EF Core
+     └── Data/            -> AppDbContext
 ```
 Fluxo: **Controller → Service → Repository → AppDbContext → SQL Server**.
 
@@ -62,7 +65,7 @@ Relacionamento 1:N: uma `Categoria` possui várias `Tarefas`.
 ## 📌 Endpoints
 | Método | Rota | Descrição | Retorno |
 |---|---|---|---|
-| POST | `/api/tarefas` | Cria tarefa (status Pendente) | 201 |
+| POST | `/api/tarefas` | Cria tarefa (status Pendente) | 201 / 400 |
 | GET | `/api/tarefas` | Lista todas | 200 |
 | GET | `/api/tarefas?status=Pendente` | Filtra por status (`Pendente`, `EmAndamento`, `Concluida`) | 200 / 400 |
 | GET | `/api/tarefas/{id}` | Busca por id | 200 / 404 |
@@ -70,6 +73,13 @@ Relacionamento 1:N: uma `Categoria` possui várias `Tarefas`.
 | DELETE | `/api/tarefas/{id}` | Exclui | 204 / 404 |
 | PATCH | `/api/tarefas/{id}/iniciar` | Pendente → EmAndamento | 200 / 400 / 404 |
 | PATCH | `/api/tarefas/{id}/concluir` | EmAndamento → Concluida | 200 / 400 / 404 |
+
+### Regras de negócio
+- Toda tarefa nasce com status `Pendente` e `DataCriacao` preenchida automaticamente.
+- Só é possível iniciar tarefas `Pendente` e concluir tarefas `EmAndamento` (validado na camada Service).
+- Ao concluir, `DataConclusao` é preenchida automaticamente.
+- `DataCriacao` e `DataConclusao` não podem ser alteradas manualmente.
+- `categoriaId` é opcional; se informado, deve existir (categorias iniciais: 1 = Desenvolvimento, 2 = Design, 3 = Infraestrutura).
 
 ### Exemplos
 Criar tarefa:
@@ -79,7 +89,7 @@ Content-Type: application/json
 
 { "titulo": "Implementar login", "descricao": "Tela e endpoint de autenticação", "categoriaId": 1 }
 ```
-Erro padronizado (middleware):
+Erro padronizado (middleware, sem stack trace):
 ```json
 { "status": 404, "erro": "NotFound", "mensagem": "Tarefa com id 99 não encontrada.", "caminho": "/api/tarefas/99", "dataHora": "2026-10-26T20:00:00" }
 ```
@@ -88,4 +98,4 @@ Erro padronizado (middleware):
 Inserir link do vídeo.
 
 ## 👥 Integrantes
-- Seu nome
+- Kim de Tarso
